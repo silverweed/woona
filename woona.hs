@@ -10,7 +10,7 @@ data IRCClient = IRCClient { username :: String
                            , realname :: String
                            , nickname :: String
 			   } deriving (Show)
-client = IRCClient { username = "testbot", realname = "Test Bot", nickname = "testbot" }
+client = IRCClient { username = "woonabot", realname = "Woona Bot", nickname = "woonabot" }
 
 data MaybeData a = SomeData a | NoData deriving (Eq, Show)
 -- prefix = servername / (nickname [ userdata ])

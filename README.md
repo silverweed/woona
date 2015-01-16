@@ -1,0 +1,2 @@
+# woona
+Dumb IRC bot

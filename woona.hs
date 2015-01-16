@@ -108,11 +108,8 @@ process (_, SomeData "PING", SomeData par) = Just $ "PONG " ++ (head par)
 -- Autojoin channels after End-Of-MOTD
 process (_, SomeData "376", _) = Just $ intercalate "\r\n" .  map (\chan -> "JOIN " ++ chan) $ channels
 -- Other actions
-process (SomeData (UserPrefix nick (Just (UserData (Just user) host))), SomeData "PRIVMSG", SomeData [chan, msg]) =
-	if msg == "whoami" then
-		Just $ "PRIVMSG " ++ chan ++ " :You are user " ++ user ++ "@" ++ host ++ " with nickname " ++ nick
-	else Nothing
-process (SomeData (UserPrefix nick _), SomeData "PRIVMSG", SomeData [chan, msg]) =
-	if msg == "hi " ++ nickname client then Just $ "PRIVMSG " ++ chan ++ " :Hi, " ++ nick
-	else Nothing
+process (SomeData (UserPrefix nick (Just (UserData (Just user) host))), SomeData "PRIVMSG", SomeData [chan, msg])
+	| msg == "whoami" = Just $ "PRIVMSG " ++ chan ++ " :You are user " ++ user ++ "@" ++ host ++ " with nickname " ++ nick
+process (SomeData (UserPrefix nick _), SomeData "PRIVMSG", SomeData [chan, msg])
+	| msg == "hi " ++ nickname client = Just $ "PRIVMSG " ++ chan ++ " :Hi, " ++ nick
 process _ = Nothing

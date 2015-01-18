@@ -12,14 +12,13 @@ data IRCClient = IRCClient { username :: String
 			   } deriving (Show)
 client = IRCClient { username = "woonabot", realname = "Woona Bot", nickname = "woonabot" }
 
-data MaybeData a = SomeData a | NoData deriving (Eq, Show)
 -- prefix = servername / (nickname [ userdata ])
 data Prefix = ServerName String | UserPrefix String (Maybe UserData) deriving (Eq, Show)
 -- userdata = [ username ] hostname
 data UserData = UserData (Maybe String) String deriving (Eq, Show)
 
-type Command = MaybeData String
-type Params = MaybeData [String]
+type Command = Maybe String
+type Params = Maybe [String]
 
 -- Connect to IRC server and start listen&process loop
 main = withSocketsDo $ do
@@ -65,23 +64,22 @@ listenForeverOn handle = do
  -	SPACE      ::= %x20
  -	crlf       ::= %x0D %x0A
  -}
-parseIRCLine :: String -> (MaybeData Prefix, Command, Params)
-parseIRCLine "" = (NoData, NoData, NoData)
+parseIRCLine :: String -> (Maybe Prefix, Command, Params)
+parseIRCLine "" = (Nothing, Nothing, Nothing)
 parseIRCLine line = 
 		let
 			spl = words line
 			prefix = if head line == ':'
-				then SomeData $ parsePrefix . tail $ head spl
-				else NoData
-			command = if prefix == NoData
-				then SomeData $ head spl
-				else SomeData $ spl !! 1
-			params = if prefix == NoData
+				then Just $ parsePrefix . tail $ head spl
+				else Nothing
+			command = if prefix == Nothing
+				then Just $ head spl
+				else Just $ spl !! 1
+			params = if prefix == Nothing
 				then parseParams $ tail spl
 				else parseParams $ tail . tail $ spl
 
-		in
-			(prefix, command, params)
+		in (prefix, command, params)
 		where
 		parsePrefix :: String -> Prefix
 		parsePrefix pfx = 
@@ -96,20 +94,20 @@ parseIRCLine line =
 						else UserPrefix nickname (Just $ UserData Nothing hostname)
 			else ServerName pfx
 		parseParams :: [String] -> Params
-		parseParams [] = NoData
-		parseParams par = SomeData $ (words f) ++ [if length s > 0 then tail s else s]
+		parseParams [] = Nothing
+		parseParams par = Just $ (words f) ++ [if length s > 0 then tail s else s]
 			where (f, s) = span (/=':') $ unwords par
 			
 
 -- Do the actual message processing. Return the line to write to the server or nothing
-process :: (MaybeData Prefix, Command, Params) -> Maybe String
+process :: (Maybe Prefix, Command, Params) -> Maybe String
 -- Answer to PINGs
-process (_, SomeData "PING", SomeData par) = Just $ "PONG " ++ (head par)
+process (_, Just "PING", Just par) = Just $ "PONG " ++ (head par)
 -- Autojoin channels after End-Of-MOTD
-process (_, SomeData "376", _) = Just $ intercalate "\r\n" .  map (\chan -> "JOIN " ++ chan) $ channels
+process (_, Just "376", _) = Just $ intercalate "\r\n" .  map (\chan -> "JOIN " ++ chan) $ channels
 -- Other actions
-process (SomeData (UserPrefix nick (Just (UserData (Just user) host))), SomeData "PRIVMSG", SomeData [chan, msg])
+process (Just (UserPrefix nick (Just (UserData (Just user) host))), Just "PRIVMSG", Just [chan, msg])
 	| msg == "whoami" = Just $ "PRIVMSG " ++ chan ++ " :You are user " ++ user ++ "@" ++ host ++ " with nickname " ++ nick
-process (SomeData (UserPrefix nick _), SomeData "PRIVMSG", SomeData [chan, msg])
+process (Just (UserPrefix nick _), Just "PRIVMSG", Just [chan, msg])
 	| msg == "hi " ++ nickname client = Just $ "PRIVMSG " ++ chan ++ " :Hi, " ++ nick
 process _ = Nothing

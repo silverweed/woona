@@ -107,7 +107,12 @@ process (_, Just "PING", Just par) = Just $ "PONG " ++ (head par)
 process (_, Just "376", _) = Just $ intercalate "\r\n" .  map (\chan -> "JOIN " ++ chan) $ channels
 -- Other actions
 process (Just (UserPrefix nick (Just (UserData (Just user) host))), Just "PRIVMSG", Just [chan, msg])
-	| msg == "whoami" = Just $ "PRIVMSG " ++ chan ++ " :You are user " ++ user ++ "@" ++ host ++ " with nickname " ++ nick
+	| msg == "whoami" = sendMsg chan $ "You are user " ++ user ++ "@" ++ host ++ " with nickname " ++ nick
 process (Just (UserPrefix nick _), Just "PRIVMSG", Just [chan, msg])
-	| msg == "hi " ++ nickname client = Just $ "PRIVMSG " ++ chan ++ " :Hi, " ++ nick
+	| msg == "hi " ++ nickname client = sendMsg chan $ "Hi, " ++ nick
+process (Just (UserPrefix nick _), Just "JOIN", Just [chan])
+	| otherwise = sendMsg chan $ "Hi, " ++ nick ++ ", how's going?"
 process _ = Nothing
+
+sendMsg :: String -> String -> Maybe String
+sendMsg chan msg = Just $ "PRIVMSG " ++ chan ++ ": " ++ msg

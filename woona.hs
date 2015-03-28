@@ -26,7 +26,7 @@ main = withSocketsDo $ do
 	handle <- connectTo (fst ircServer) (PortNumber $ snd ircServer)
 	putStrLn $ "Authenticating with " ++ (show client)
 	-- Authenticate to the server
-	hPutStrLn handle $ "USER " ++ username client ++ " 8 * : " ++ realname client
+	hPutStrLn handle $ "USER " ++ username client ++ " 8 * :" ++ realname client
 	hPutStrLn handle $ "NICK " ++ nickname client
 	-- Start loop
 	listenForeverOn handle `Ex.catch` handleErr
@@ -115,4 +115,4 @@ process (Just (UserPrefix nick _), Just "JOIN", Just [chan])
 process _ = Nothing
 
 sendMsg :: String -> String -> Maybe String
-sendMsg chan msg = Just $ "PRIVMSG " ++ chan ++ ": " ++ msg
+sendMsg chan msg = Just $ "PRIVMSG " ++ chan ++ " :" ++ msg
